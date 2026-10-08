@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phiếu Học Tập Tương Tác</title>
+    <style>
+        /* === PHẦN GIAO DIỆN CỐ ĐỊNH (KHÔNG CẦN SỬA) === */
+        :root {
+            --primary: #667eea; --secondary: #764ba2; --bg-color: #f4f5f9;
+            --card-bg: #ffffff; --text-main: #333333; --border-radius: 12px;
+            --correct-color: #2ecc71; --correct-bg: #e8f8f5;
+            --wrong-color: #e74c3c; --wrong-bg: #fdedec;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 15px; line-height: 1.6; }
+        .container { max-width: 800px; margin: 0 auto; position: relative; }
+        .card { background-color: var(--card-bg); border-radius: var(--border-radius); box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; overflow: hidden; border: 1px solid #eaeaea; }
+        .card-header { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; padding: 15px 20px; font-size: 1.2rem; font-weight: bold; }
+        .card-body { padding: 20px; }
+        .input-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+        .input-group input { padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; }
+        h1 { text-align: center; color: var(--secondary); font-size: 1.5rem; margin-top: 10px; }
+        .subtitle { text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 20px; }
+        .question-block { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #eee; }
+        .question-title { font-weight: bold; margin-bottom: 10px; color: #222; }
+        .radio-option { display: block; margin-bottom: 8px; cursor: pointer; padding: 10px; border-radius: 8px; border: 1px solid transparent; transition: all 0.2s; }
+        .radio-option:hover { background: #f0f4ff; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f8f9fa; text-align: center; }
+        td.center { text-align: center; }
+        .fill-input { border: none; border-bottom: 2px solid var(--primary); width: 130px; font-size: 1rem; color: var(--secondary); font-weight: bold; text-align: center; outline: none; background: transparent; }
+        .match-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }
+        .match-select { padding: 8px; border-radius: 6px; border: 1px solid #ccc; font-weight: bold; }
+        .correct-ans { background-color: var(--correct-bg) !important; border-color: var(--correct-color) !important; color: #1e8449; font-weight: bold; }
+        .wrong-ans { background-color: var(--wrong-bg) !important; border-color: var(--wrong-color) !important; color: #c0392b; text-decoration: line-through; }
+        .correction-text { color: var(--correct-color); font-weight: bold; font-size: 0.9rem; margin-left: 10px; }
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { flex: 1; padding: 15px; font-size: 1.1rem; font-weight: bold; text-align: center; border: none; border-radius: var(--border-radius); cursor: pointer; color: white; transition: opacity 0.2s; }
+        .btn:active { transform: scale(0.98); }
+        .btn-submit { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); }
+        .btn-reset { background: #95a5a6; }
+        .btn:hover { opacity: 0.9; }
+        #score-board { display: none; background: white; border: 3px solid var(--secondary); border-radius: var(--border-radius); padding: 20px; margin-bottom: 20px; text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        #score-text { font-size: 2.5rem; color: var(--secondary); font-weight: bold; margin: 10px 0; }
+        #score-msg { font-size: 1.1rem; color: #555; }
+        .footer { text-align: center; margin-top: 20px; color: #888; font-size: 0.85rem; padding-bottom: 20px; }
+        .takeaway-box { background-color: #fdf5e6; border-left: 5px solid #ffa502; padding: 15px; border-radius: 8px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 id="app-title">Đang tải tiêu đề...</h1>
+    <div id="app-subtitle" class="subtitle">Đang tải phụ đề...</div>
+
+    <div id="score-board">
+        <h2>Kết Quả Làm Bài</h2>
+        <div id="score-text">0.0 / 10</div>
+        <div id="score-details"></div>
+        <div id="score-msg"></div>
+    </div>
+
+    <!-- THÔNG TIN HỌC SINH -->
+    <div class="card">
+        <div class="card-body">
+            <div class="input-group">
+                <input type="text" id="student-name" placeholder="Nhập họ và tên học sinh..." required>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <div class="input-group" style="flex: 1;"><input type="text" id="student-class" placeholder="Lớp"></div>
+                <div class="input-group" style="flex: 1;"><input type="date"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NƠI RENDER CÁC THẺ NỘI DUNG -->
+    <div id="content-render-area"></div>
+
+    <!-- BUTTONS -->
+    <div class="btn-group">
+        <button class="btn btn-reset" onclick="lamLai()">🔄 Làm Lại</button>
+        <button class="btn btn-submit" onclick="nopBai()">🚀 Nộp Bài</button>
+    </div>
+    
+    <div class="footer" id="app-footer"></div>
+</div>
+
+<script>
+    // ========================================================================
+    // PHẦN 1: CẤU TRÚC DỮ LIỆU BÀI HỌC (GIÁO VIÊN CHỈ CHỈNH SỬA Ở KHU VỰC NÀY)
+    // ========================================================================
+    const DULIEU_BAIHOC = {
+        thong_tin: {
+            tieu_de: "💜 PHIẾU HỌC TẬP CHƯƠNG 1: ESTER - LIPID 💜",
+            phu_de: "Môn: Hóa Học 12 | Thiết kế dành cho học sinh THPT",
+            tac_gia: "Thiết kế bởi Cô Lê Thị Hà | Giáo viên Hóa học THPT"
+        },
+        muc_tieu: [
+            "Nhận diện công thức, gọi tên và nhận biết mùi hương đặc trưng của các ester, lipid thường gặp.",
+            "Vận dụng kiến thức về phản ứng ester hóa, thủy phân, hydrogen hóa để giải thích các hiện tượng.",
+            "Hiểu được ứng dụng của ester và lipid trong thực tiễn."
+        ],
+        trac_nghiem: [
+            { id: "q1", cau_hoi: "Câu 1: Tên gọi của ester CH3COOC2H5 là", lua_chon: { A: "methyl acetate.", B: "ethyl propionate.", C: "ethyl acetate.", D: "methyl propionate." }, dap_an: "C" },
+            { id: "q2", cau_hoi: "Câu 2: Tên gọi theo danh pháp thay thế của CH3CH2COOCH3 là", lua_chon: { A: "methyl ethanoate.", B: "propyl acetate.", C: "methyl propionate.", D: "methyl propanoate." }, dap_an: "D" },
+            { id: "q3", cau_hoi: "Câu 3: Hợp chất HCOOC2H5 có mùi thơm của quả đào. Tên gọi của hợp chất này là", lua_chon: { A: "methyl propionate.", B: "ethyl formate.", C: "ethyl acrylate.", D: "ethyl acetate." }, dap_an: "B" },
+            { id: "q4", cau_hoi: "Câu 4: Ester ethyl propionate có mùi thơm của quả dứa chín. Công thức của nó là", lua_chon: { A: "C2H5COOC6H5.", B: "CH3COOC2H5.", C: "C2H3COOC2H5.", D: "C2H5COOC2H5." }, dap_an: "D" },
+            { id: "q5", cau_hoi: "Câu 5: Công thức cấu tạo của ethyl acetate là", lua_chon: { A: "HCOOC2H5.", B: "C2H5COOCH3.", C: "CH3COOC2H5.", D: "CH3COOCH3." }, dap_an: "C" },
+            { id: "q6", cau_hoi: "Câu 6: Triolein có công thức cấu tạo thu gọn là", lua_chon: { A: "(C15H31COO)3C3H5.", B: "(C17H35COO)3C3H5.", C: "(C17H33COO)3C3H5.", D: "(C17H31COO)3C3H5." }, dap_an: "C" },
+            { id: "q7", cau_hoi: "Câu 7: Phản ứng chuyển hóa chất béo lỏng thành chất béo rắn là phản ứng", lua_chon: { A: "hydrogen hóa.", B: "ester hóa.", C: "xà phòng hóa.", D: "hydrate hóa." }, dap_an: "A" },
+            { id: "q8", cau_hoi: "Câu 8: Ester nào sau đây tác dụng với NaOH thu được ethyl alcohol?", lua_chon: { A: "C2H5COOCH3.", B: "CH3COOC2H5.", C: "HCOOCH3.", D: "CH3COOC3H7." }, dap_an: "B" },
+            { id: "q9", cau_hoi: "Câu 9: Đun nóng ethyl formate với dung dịch NaOH thu được sodium formate và alcohol X. Công thức của X là", lua_chon: { A: "C2H5OH.", B: "CH3OH.", C: "HCOONa.", D: "CH3CH2OH." }, dap_an: "A" },
+            { id: "q10", cau_hoi: "Câu 10: Xà phòng hóa hoàn toàn 7,4 gam HCOOC2H5 bằng dung dịch KOH vừa đủ, cô cạn thu được m gam muối. Giá trị của m là", lua_chon: { A: "8,4.", B: "9,6.", C: "7,2.", D: "6,8." }, dap_an: "A" }
+        ],
+        dung_sai: [
+            {
+                chu_de: "Câu 1: Về cấu tạo và tính chất vật lí của ester",
+                cac_y: [
+                    { id: "tf1a", phat_bieu: "a. Ester mạch hở, đơn chức, no có CT chung là CnH2nO2 (n ≥ 2).", dap_an: "T" },
+                    { id: "tf1b", phat_bieu: "b. Trong phân tử ester đơn chức luôn chứa một nhóm carbonyl (-C=O).", dap_an: "T" },
+                    { id: "tf1c", phat_bieu: "c. Các ester đều tan rất tốt trong nước nhờ tạo được liên kết hydrogen mạnh.", dap_an: "F" },
+                    { id: "tf1d", phat_bieu: "d. Benzyl acetate là ester có mùi thơm hoa nhài, phân tử chứa vòng benzene.", dap_an: "T" }
+                ]
+            },
+            {
+                chu_de: "Câu 2: Trạng thái vật lí của chất béo",
+                cac_y: [
+                    { id: "tf2a", phat_bieu: "a. Dầu thực vật thường ở trạng thái lỏng do chứa nhiều gốc acid béo no.", dap_an: "F" },
+                    { id: "tf2b", phat_bieu: "b. Mỡ động vật thường ở trạng thái rắn ở điều kiện thường.", dap_an: "T" },
+                    { id: "tf2c", phat_bieu: "c. Điểm nóng chảy của tristearin cao hơn điểm nóng chảy của triolein.", dap_an: "T" },
+                    { id: "tf2d", phat_bieu: "d. Dầu nhớt bôi trơn máy móc có thành phần hoá học giống hệt dầu thực vật.", dap_an: "F" }
+                ]
+            },
+            {
+                chu_de: "Câu 3: Xét về số lượng đồng phân",
+                cac_y: [
+                    { id: "tf3a", phat_bieu: "a. Có 4 đồng phân ester mạch hở ứng với công thức phân tử C4H8O2.", dap_an: "T" },
+                    { id: "tf3b", phat_bieu: "b. Ứng với công thức C3H6O2 có 2 đồng phân mạch hở đều có pứ tráng bạc.", dap_an: "T" },
+                    { id: "tf3c", phat_bieu: "c. Trộn glycerol với stearic và palmitic acid thu được tối đa 6 loại triglyceride.", dap_an: "T" },
+                    { id: "tf3d", phat_bieu: "d. Số triester tạo ra khi thuỷ phân sinh ra đúng 2 muối acid béo là 2.", dap_an: "F" }
+                ]
+            },
+            {
+                chu_de: "Câu 4: Thuỷ phân ethyl acetate (Ống 1: Nước; Ống 2: H2SO4; Ống 3: NaOH)",
+                cac_y: [
+                    { id: "tf4a", phat_bieu: "a. Ống 1 không xảy ra phản ứng, chất lỏng vẫn phân thành 2 lớp.", dap_an: "T" },
+                    { id: "tf4b", phat_bieu: "b. Ống 2 xảy ra phản ứng một chiều, chất lỏng trở nên đồng nhất nhanh chóng.", dap_an: "F" },
+                    { id: "tf4c", phat_bieu: "c. Ống 3 xảy ra phản ứng nhanh nhất, khi kết thúc thu được dung dịch đồng nhất.", dap_an: "T" },
+                    { id: "tf4d", phat_bieu: "d. Sau phản ứng, nhỏ Tollens vào cả 3 ống đun nóng đều có kết tủa bạc.", dap_an: "F" }
+                ]
+            },
+            {
+                chu_de: "Câu 5: Thí nghiệm xà phòng hoá mỡ lợn",
+                cac_y: [
+                    { id: "tf5a", phat_bieu: "a. Khi đun, ta cần khuấy đều và thỉnh thoảng thêm nước cất để giữ thể tích.", dap_an: "T" },
+                    { id: "tf5b", phat_bieu: "b. Sau khi đun xong, dung dịch thu được hoàn toàn tách lớp giữa xà phòng và nước.", dap_an: "F" },
+                    { id: "tf5c", phat_bieu: "c. Thêm dung dịch NaCl bão hoà vào sau khi đun nhằm làm xà phòng kết tinh nổi lên.", dap_an: "T" },
+                    { id: "tf5d", phat_bieu: "d. Phần chất lỏng phía dưới sau khi tách xà phòng chỉ chứa nước và NaCl dư.", dap_an: "F" }
+                ]
+            },
+            {
+                chu_de: "Câu 6: Về cấu tạo các acid béo",
+                cac_y: [
+                    { id: "tf6a", phat_bieu: "a. Stearic acid có công thức C17H35COOH.", dap_an: "T" },
+                    { id: "tf6b", phat_bieu: "b. Oleic acid là acid béo không no có chứa 2 liên kết đôi C=C.", dap_an: "F" },
+                    { id: "tf6c", phat_bieu: "c. Linoleic acid (LA) có công thức là C17H31COOH.", dap_an: "T" },
+                    { id: "tf6d", phat_bieu: "d. Palmitic acid thuộc dãy đồng đẳng của acetic acid.", dap_an: "T" }
+                ]
+            }
+        ],
+        dien_khuyet: [
+            { id: "fill1", cau_hoi: "1. Chất béo là triester của [___] với acid béo.", dap_an: ["glycerol"] },
+            { id: "fill2", cau_hoi: "2. Điều chế ethyl acetate từ ethanol và acetic acid gọi là phản ứng [___].", dap_an: ["ester hóa", "ester hoá", "este hóa", "este hoá"] },
+            { id: "fill3", cau_hoi: "3. Để chuyển dầu thực vật thành bơ thực vật ta thực hiện phản ứng [___].", dap_an: ["hydrogen hóa", "hydrogen hoá", "cộng hydrogen"] },
+            { id: "fill4", cau_hoi: "4. Hợp chất HCOOC2H5 có mùi thơm của quả [___].", dap_an: ["đào"] },
+            { id: "fill5", cau_hoi: "5. Ester ethyl propionate có mùi thơm của quả [___] chín.", dap_an: ["dứa"] },
+            { id: "fill6", cau_hoi: "6. Isoamyl acetate là thành phần chính của dầu [___].", dap_an: ["chuối"] },
+            { id: "fill7", cau_hoi: "7. Ethyl acetate là dung môi tốt nhờ bay hơi nhanh và có [___] dễ chịu.", dap_an: ["mùi", "mùi thơm"] },
+            { id: "fill8", cau_hoi: "8. Xà phòng có phần phân cực là đầu [___] và đuôi kị nước.", dap_an: ["ưa nước", "phân cực"] },
+            { id: "fill9", cau_hoi: "9. Biodiesel thân thiện với môi trường hơn [___] truyền thống.", dap_an: ["diesel", "dầu diesel"] },
+            { id: "fill10", cau_hoi: "10. Đun ethyl formate với NaOH thu được sodium formate và [___] (Tên chất).", dap_an: ["ethanol", "ethyl alcohol", "c2h5oh"] }
+        ],
+        noi_cot: {
+            cot_B: {
+                a: "Mùi dứa chín", b: "Xúc tác & hút nước", c: "Mùi đào", d: "Mùi chuối chín", e: "Chất béo lỏng",
+                f: "Nhiên liệu sinh học", g: "Thuốc giảm đau", h: "Bơ thực vật", i: "Giảm độ tan ester", j: "Luôn có khi xà phòng hoá"
+            },
+            cot_A: [
+                { id: "match1", text: "1. HCOOC2H5", dap_an: "c" },
+                { id: "match2", text: "2. Isoamyl acetate", dap_an: "d" },
+                { id: "match3", text: "3. Ethyl propionate", dap_an: "a" },
+                { id: "match4", text: "4. Triolein", dap_an: "e" },
+                { id: "match5", text: "5. Methyl salicylate", dap_an: "g" },
+                { id: "match6", text: "6. H2SO4 đặc", dap_an: "b" },
+                { id: "match7", text: "7. NaCl bão hòa", dap_an: "i" },
+                { id: "match8", text: "8. Glycerol", dap_an: "j" },
+                { id: "match9", text: "9. Biodiesel", dap_an: "f" },
+                { id: "match10", text: "10. Bơ nhân tạo", dap_an: "h" }
+            ]
+        },
+        ghi_nho: [
+            "<strong>Nhận diện Ester:</strong> Nhóm -COO- liên kết với hydrocarbon. Phân tử khối CH3COOC2H5 = 88.",
+            "<strong>Tên gọi - Mùi hương:</strong> Ethyl formate (đào), Isoamyl acetate (chuối), Ethyl propionate (dứa).",
+            "<strong>Chất béo:</strong> Rắn (no, mỡ động vật), Lỏng (không no, dầu thực vật). Chuyển lỏng thành rắn bằng hydrogen hóa.",
+            "<strong>Thực hành:</strong> H2SO4 đặc (xúc tác, hút nước); NaCl bão hòa (tách ester dễ dàng)."
+        ]
+    };
+
+    // ========================================================================
+    // PHẦN 2: LOGIC RENDER & CHẤM ĐIỂM (HỆ THỐNG - KHÔNG CẦN CHỈNH SỬA)
+    // ========================================================================
+    function renderApp() {
+        document.getElementById("app-title").innerText = DULIEU_BAIHOC.thong_tin.tieu_de;
+        document.getElementById("app-subtitle").innerText = DULIEU_BAIHOC.thong_tin.phu_de;
+        document.getElementById("app-footer").innerText = DULIEU_BAIHOC.thong_tin.tac_gia;
+
+        let contentArea = document.getElementById("content-render-area");
+        let htmlContent = "";
+
+        // Thẻ 1: Mục tiêu
+        htmlContent += `<div class="card"><div class="card-header">🎯 THẺ 1: MỤC TIÊU BÀI HỌC</div><div class="card-body"><ul>${DULIEU_BAIHOC.muc_tieu.map(m => `<li>${m}</li>`).join("")}</ul></div></div>`;
+
+        // Thẻ 2: Trắc nghiệm
+        htmlContent += `<div class="card"><div class="card-header">🧠 THẺ 2: TRẮC NGHIỆM NHANH</div><div class="card-body">`;
+        DULIEU_BAIHOC.trac_nghiem.forEach(q => {
+            htmlContent += `<div class="question-block"><div class="question-title">${q.cau_hoi}</div>`;
+            for (let key in q.lua_chon) { htmlContent += `<label class="radio-option"><input type="radio" name="${q.id}" value="${key}"> ${key}. ${q.lua_chon[key]}</label>`; }
+            htmlContent += `</div>`;
+        });
+        htmlContent += `</div></div>`;
+
+        // Thẻ 3: Đúng Sai
+        htmlContent += `<div class="card"><div class="card-header">⚖️ THẺ 3: KIỂM CHỨNG ĐÚNG / SAI</div><div class="card-body">`;
+        DULIEU_BAIHOC.dung_sai.forEach(g => {
+            htmlContent += `<div class="question-block"><div class="question-title">${g.chu_de}</div><table><tr><th>Phát biểu</th><th>Đ</th><th>S</th></tr>`;
+            g.cac_y.forEach(y => { htmlContent += `<tr><td>${y.phat_bieu}</td><td class="center"><input type="radio" name="${y.id}" value="T"></td><td class="center"><input type="radio" name="${y.id}" value="F"></td></tr>`; });
+            htmlContent += `</table></div>`;
+        });
+        htmlContent += `</div></div>`;
+
+        // Thẻ 4: Điền Khuyết
+        htmlContent += `<div class="card"><div class="card-header">✍️ THẺ 4: ĐIỀN TỪ CÒN KHUYẾT</div><div class="card-body">`;
+        DULIEU_BAIHOC.dien_khuyet.forEach(dk => {
+            let parts = dk.cau_hoi.split("[___]");
+            htmlContent += `<p>${parts[0]}<input type="text" id="${dk.id}" class="fill-input">${parts[1]} <span class="correction-text" id="corr-${dk.id}"></span></p>`;
+        });
+        htmlContent += `</div></div>`;
+
+        // Thẻ 5: Nối Cột
+        let optStr = Object.keys(DULIEU_BAIHOC.noi_cot.cot_B).map(k => `${k}. ${DULIEU_BAIHOC.noi_cot.cot_B[k]}`).join(" &nbsp;|&nbsp; ");
+        htmlContent += `<div class="card"><div class="card-header">🔗 THẺ 5: NỐI CỘT TƯƠNG ỨNG</div><div class="card-body">
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; font-size: 0.95rem;"><strong>Cột B:</strong><br>${optStr}</div>`;
+        let selectOptions = `<option value="">-- Chọn --</option>` + Object.keys(DULIEU_BAIHOC.noi_cot.cot_B).map(k => `<option value="${k}">${k}</option>`).join("");
+        DULIEU_BAIHOC.noi_cot.cot_A.forEach(item => {
+            htmlContent += `<div class="match-row"><label>${item.text}</label><div><select id="${item.id}" class="match-select">${selectOptions}</select> <span class="correction-text" id="corr-${item.id}"></span></div></div>`;
+        });
+        htmlContent += `</div></div>`;
+
+        // Thẻ 6: Ghi nhớ
+        htmlContent += `<div class="card"><div class="card-header">💡 THẺ 6: GÓC GHI NHỚ</div><div class="card-body"><div class="takeaway-box"><strong>📌 Checklist:</strong>
+            <ul>${DULIEU_BAIHOC.ghi_nho.map(g => `<li>${g}</li>`).join("")}</ul></div></div></div>`;
+
+        contentArea.innerHTML = htmlContent;
+    }
+
+    let totalScoreItems = 0;
+
+    function initLogic() {
+        renderApp();
+        totalScoreItems += DULIEU_BAIHOC.trac_nghiem.length;
+        DULIEU_BAIHOC.dung_sai.forEach(g => totalScoreItems += g.cac_y.length);
+        totalScoreItems += DULIEU_BAIHOC.dien_khuyet.length;
+        totalScoreItems += DULIEU_BAIHOC.noi_cot.cot_A.length;
+    }
+
+    function nopBai() {
+        let ten = document.getElementById("student-name").value.trim();
+        let lop = document.getElementById("student-class").value.trim();
+        
+        if(ten === "") { alert("Vui lòng nhập họ và tên trước khi nộp bài!"); return; }
+
+        let correctCount = 0;
+        let wrongCount = 0;
+        let unansweredCount = 0;
+
+        // Chấm Trắc Nghiệm
+        DULIEU_BAIHOC.trac_nghiem.forEach(q => {
+            let radios = document.getElementsByName(q.id);
+            let userAns = "";
+            radios.forEach(r => { 
+                r.disabled = true; 
+                if(r.checked) userAns = r.value; 
+                if(r.value === q.dap_an) r.parentElement.classList.add("correct-ans");
+            });
+            if(userAns === q.dap_an) correctCount++;
+            else if (userAns === "") unansweredCount++;
+            else { wrongCount++; radios.forEach(r => { if(r.checked) r.parentElement.classList.add("wrong-ans"); }); }
+        });
+
+        // Chấm Đúng / Sai
+        DULIEU_BAIHOC.dung_sai.forEach(g => {
+            g.cac_y.forEach(y => {
+                let radios = document.getElementsByName(y.id);
+                let userAns = "";
+                radios.forEach(r => { 
+                    r.disabled = true;
+                    if(r.checked) userAns = r.value;
+                    if(r.value === y.dap_an) r.parentElement.classList.add("correct-ans");
+                });
+                if(userAns === y.dap_an) correctCount++;
+                else if (userAns === "") unansweredCount++;
+                else { wrongCount++; radios.forEach(r => { if(r.checked) r.parentElement.classList.add("wrong-ans"); }); }
+            });
+        });
+
+        // Chấm Điền Khuyết
+        DULIEU_BAIHOC.dien_khuyet.forEach(dk => {
+            let input = document.getElementById(dk.id);
+            input.disabled = true;
+            let userAns = input.value.trim().toLowerCase();
+            if (userAns === "") {
+                unansweredCount++;
+                document.getElementById(`corr-${dk.id}`).innerText = "=> " + dk.dap_an[0];
+            }
+            else if(dk.dap_an.includes(userAns)) {
+                correctCount++;
+                input.classList.add("correct-ans");
+            } else {
+                wrongCount++;
+                input.classList.add("wrong-ans");
+                document.getElementById(`corr-${dk.id}`).innerText = "=> " + dk.dap_an[0];
+            }
+        });
+
+        // Chấm Nối Cột
+        DULIEU_BAIHOC.noi_cot.cot_A.forEach(nc => {
+            let sel = document.getElementById(nc.id);
+            sel.disabled = true;
+            let userAns = sel.value;
+            if (userAns === "") {
+                unansweredCount++;
+                document.getElementById(`corr-${nc.id}`).innerText = "=> Chọn " + nc.dap_an;
+            } else if(userAns === nc.dap_an) {
+                correctCount++;
+                sel.classList.add("correct-ans");
+            } else {
+                wrongCount++;
+                sel.classList.add("wrong-ans");
+                document.getElementById(`corr-${nc.id}`).innerText = "=> Chọn " + nc.dap_an;
+            }
+        });
+
+        let diem = (correctCount / totalScoreItems) * 10;
+        let diemFormat = diem.toFixed(1);
+
+        let scoreBoard = document.getElementById("score-board");
+        scoreBoard.style.display = "block";
+        document.getElementById("score-text").innerText = diemFormat + " / 10";
+        document.getElementById("score-details").innerText = `(Đúng: ${correctCount} | Sai: ${wrongCount} | Chưa làm: ${unansweredCount})`;
+        
+        let scoreMsg = document.getElementById("score-msg");
+        if(diem >= 8.5) scoreMsg.innerText = "Tuyệt vời! Em nắm bài rất chắc! 🎉 Đang lưu điểm...";
+        else if(diem >= 6.5) scoreMsg.innerText = "Khá lắm! Em hãy xem lại những lỗi sai để hoàn thiện nhé. 👍 Đang lưu điểm...";
+        else scoreMsg.innerText = "Em cần ôn tập kỹ lý thuyết hơn nhé. Cố lên! 💪 Đang lưu điểm...";
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // GỬI DỮ LIỆU LÊN GOOGLE SHEETS
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzFheUp86FXIBVpq191C3pUIUi-aos885SmZJT5FCiWgjFv-jvIRFLte763K-qx3f3D9g/exec";
+
+        const formData = new URLSearchParams();
+        formData.append("hoTen", ten);
+        formData.append("lop", lop);
+        formData.append("diem", diemFormat);
+        formData.append("soCauDung", correctCount);
+        formData.append("soCauSai", wrongCount);
+        formData.append("soCauChuaLam", unansweredCount);
+        formData.append("tongSoCau", totalScoreItems);
+
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.status === "success") {
+                scoreMsg.innerText = scoreMsg.innerText.replace("Đang lưu điểm...", "Đã lưu kết quả thành công!");
+            } else {
+                scoreMsg.innerText = scoreMsg.innerText.replace("Đang lưu điểm...", "(Lỗi: Không thể lưu kết quả)");
+            }
+        })
+        .catch(error => {
+            console.error('Lỗi khi gửi dữ liệu:', error);
+            scoreMsg.innerText = scoreMsg.innerText.replace("Đang lưu điểm...", "(Đã ghi nhận điểm. Kiểm tra Google Sheets để xác nhận)");
+        });
+    }
+
+    function lamLai() {
+        if(!confirm("Em có chắc chắn muốn làm lại từ đầu? Mọi câu trả lời sẽ bị xóa.")) return;
+        renderApp();
+        document.getElementById("score-board").style.display = "none";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    window.onload = initLogic;
+</script>
+
+</body>
+</html>
